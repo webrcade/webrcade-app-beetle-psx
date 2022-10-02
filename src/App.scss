@@ -3,5 +3,6 @@
   height: 96vh !important;
   max-width: calc(96vh * 1.333) !important;
   max-height: calc(96vw * 0.75) !important;
+  image-rendering: crisp-edges !important;
   // border: 1px solid red;
 }

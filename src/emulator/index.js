@@ -1,13 +1,40 @@
 import {
   registerAudioResume,
+  settings,
   AppWrapper,
+  Controller,
+  Controllers,
+  DefaultKeyCodeToControlMapping,
   DisplayLoop,
-  // FetchAppData,
+  Resources,
   CIDS,
   LOG,
+  TEXT_IDS
 } from '@webrcade/app-common';
 
 export class Emulator extends AppWrapper {
+
+  INP_LEFT = 1;
+  INP_RIGHT = 1 << 1;
+  INP_UP = 1 << 2;
+  INP_DOWN = 1 << 3;
+  INP_START = 1 << 4;
+  INP_SELECT = 1 << 5;
+  INP_A = 1 << 6;
+  INP_B = 1 << 7;
+  INP_X = 1 << 8;
+  INP_Y = 1 << 9;
+  INP_LBUMP = 1 << 10;
+  INP_LTRIG = 1 << 11;
+  INP_LTHUMB = 1 << 12;
+  INP_RBUMP = 1 << 13;
+  INP_RTRIG = 1 << 14;
+  INP_RTHUMB = 1 << 15;
+  CONTROLLER_COUNT = 4;
+
+  OPT1 = 1;
+  OPT2 = 1 << 1;
+
   constructor(app, debug = false) {
     super(app, debug);
 
@@ -18,32 +45,123 @@ export class Emulator extends AppWrapper {
     this.biosBuffers = null;
     this.escapeCount = -1;
     this.audioPlaying = false;
+    this.analogMode = this.getProps().analog;
+    this.saveStatePath = null;
+
+    LOG.info("## Initial analog mode: " + this.analogMode);
   }
 
   RA_DIR = '/home/web_user/retroarch/';
   RA_SYSTEM_DIR = this.RA_DIR + 'system/';
   ROM = this.RA_DIR + 'game.chd';
 
-  setRoms(frontendArray, biosBuffers, romBytes) {
+  SRAM_NAME = 'game.srm';
+  SAVE_NAME = 'sav';
+
+  setRoms(uid, frontendArray, biosBuffers, romBytes) {
+    this.uid = uid;
     this.frontendArray = frontendArray;
     this.biosBuffers = biosBuffers;
     this.romBytes = romBytes;
+  }
+
+  createControllers() {
+    return new Controllers([
+      new Controller(new DefaultKeyCodeToControlMapping()),
+      new Controller(),
+      new Controller(),
+      new Controller(),
+    ]);
   }
 
   createAudioProcessor() {
     return null;
   }
 
-  async onShowPauseMenu() {}
+  async onShowPauseMenu() {
+    await this.saveState();
+  }
 
-  async saveState() {}
+  async saveState() {
+    const { saveStatePath, started } = this;
+    const { FS, Module } = window;
+
+    try {
+      if (!started) {
+        return;
+      }
+
+      // Save to files
+      Module._cmd_savefiles();
+
+      const path = `/home/web_user/retroarch/userdata/saves/${this.SRAM_NAME}`
+      let s = FS.readFile(path);
+      if (s) {
+        const files = [{
+          name: this.SAVE_NAME,
+          content: s,
+      }];
+
+        if (await this.getSaveManager().checkFilesChanged(files)) {
+          LOG.info('saving sram.');
+
+          await this.getSaveManager().save(
+            saveStatePath,
+            files,
+            this.saveMessageCallback,
+          );
+        }
+      }
+    } catch (e) {
+      LOG.error('Error persisting save state: ' + e);
+    }
+  }
+
+  async loadState() {
+    const { saveStatePath } = this;
+    const { FS } = window;
+
+    // Write the save state (if applicable)
+    try {
+      // Create the save path (MEM FS)
+      const path = `/home/web_user/retroarch/userdata/saves/${this.SRAM_NAME}`
+      const res = FS.analyzePath(path, true);
+      if (!res.exists) {
+        // Load
+        const files = await this.getSaveManager().load(
+          saveStatePath,
+          this.loadMessageCallback,
+        );
+
+        if (files) {
+          for (let i = 0; i < files.length; i++) {
+            const f = files[i];
+            if (f.name === this.SAVE_NAME) {
+              LOG.info('writing sram file.');
+              FS.writeFile(path, f.content);
+              break;
+            }
+          }
+
+          // Cache the initial files
+          await this.getSaveManager().checkFilesChanged(files);
+        }
+      }
+    } catch (e) {
+      LOG.error('Error loading save state: ' + e);
+    }
+  }
 
   pollControls() {
-    const { controllers } = this;
+    const { analogMode, CONTROLLER_COUNT, controllers } = this;
 
     controllers.poll();
 
-    for (let i = 0; i < 4; i++) {
+    const isAnalog = analogMode;
+
+    for (let i = 0; i < CONTROLLER_COUNT; i++) {
+      let input = 0;
+
       // Hack to reduce likelihood of accidentally bringing up menu
       if (
         controllers.isControlDown(0 /*i*/, CIDS.ESCAPE) &&
@@ -56,14 +174,75 @@ export class Emulator extends AppWrapper {
           return;
         }
       }
+
+      if (controllers.isControlDown(i, CIDS.UP, !isAnalog)) {
+        input |= this.INP_UP;
+      } else if (controllers.isControlDown(i, CIDS.DOWN, !isAnalog)) {
+        input |= this.INP_DOWN;
+      }
+      if (controllers.isControlDown(i, CIDS.RIGHT, !isAnalog)) {
+        input |= this.INP_RIGHT;
+      } else if (controllers.isControlDown(i, CIDS.LEFT, !isAnalog)) {
+        input |= this.INP_LEFT;
+      }
+      if (controllers.isControlDown(i, CIDS.START)) {
+        input |= this.INP_START;
+      }
+      if (controllers.isControlDown(i, CIDS.SELECT)) {
+        input |= this.INP_SELECT;
+      }
+      if (controllers.isControlDown(i, CIDS.A)) {
+        input |= this.INP_A;
+      }
+      if (controllers.isControlDown(i, CIDS.B)) {
+        input |= this.INP_B;
+      }
+      if (controllers.isControlDown(i, CIDS.X)) {
+        input |= this.INP_X;
+      }
+      if (controllers.isControlDown(i, CIDS.Y)) {
+        input |= this.INP_Y;
+      }
+      if (controllers.isControlDown(i, CIDS.LBUMP)) {
+        input |= this.INP_LBUMP;
+      }
+      if (controllers.isControlDown(i, CIDS.RBUMP)) {
+        input |= this.INP_RBUMP;
+      }
+      if (controllers.isControlDown(i, CIDS.LTRIG)) {
+        input |= this.INP_LTRIG;
+      }
+      if (controllers.isControlDown(i, CIDS.RTRIG)) {
+        input |= this.INP_RTRIG;
+      }
+      if (controllers.isControlDown(i, CIDS.LANALOG)) {
+        input |= this.INP_LTHUMB
+      }
+      if (controllers.isControlDown(i, CIDS.RANALOG)) {
+        input |= this.INP_RTHUMB
+      }
+
+      const analog0x = controllers.getAxisValue(i, 0, true);
+      const analog0y = controllers.getAxisValue(i, 0, false);
+      const analog1x= controllers.getAxisValue(i, 1, true);
+      const analog1y = controllers.getAxisValue(i, 1, false);
+
+      window.Module._wrc_set_input(
+        i,
+        input,
+        analog0x,
+        analog0y,
+        analog1x,
+        analog1y,
+      );
     }
   }
 
   loadEmscriptenModule(canvas) {
     const {
       app,
-      /*biosBuffers,*/ frontendArray,
-      RA_DIR /*RA_SYSTEM_DIR, ROM*/,
+      frontendArray,
+      RA_DIR,
     } = this;
 
     return new Promise((resolve, reject) => {
@@ -124,6 +303,7 @@ export class Emulator extends AppWrapper {
           FS.mkdir('/home/web_user/retroarch/system');
           FS.mkdir('/home/web_user/retroarch/userdata');
           FS.mkdir('/home/web_user/retroarch/userdata/system');
+          FS.mkdir('/home/web_user/retroarch/userdata/saves');
         },
       };
 
@@ -132,8 +312,6 @@ export class Emulator extends AppWrapper {
       script.src = 'js/mednafen_psx_libretro.js';
     });
   }
-
-  async loadState() {}
 
   onPause(p) {
     if (!p) {
@@ -154,8 +332,34 @@ export class Emulator extends AppWrapper {
     });
   }
 
+  applyGameSettings() {
+    const { Module } = window;
+
+    const props = this.getProps();
+
+    let options = 0;
+    // multi-tap
+    if (props.multitap) {
+      LOG.info("## multitap on");
+      options |= this.OPT1;
+    }
+    // analog
+    if (this.analogMode) {
+      LOG.info("## analog on");
+      options |= this.OPT2;
+    }
+    Module._wrc_set_options(options);
+  }
+
+  setAnalogMode(analog) {
+    const isAnalog = (analog === 1);
+    LOG.info("## Game setAnalogMode: " + isAnalog);
+    this.analogMode = isAnalog;
+    this.applyGameSettings();
+  }
+
   async onStart(canvas) {
-    const { app, /*biosBuffers,*/ debug, /*RA_DIR,*/ ROM } = this;
+    const { app, debug, ROM } = this;
     const { FS, Module } = window;
 
     try {
@@ -165,19 +369,25 @@ export class Emulator extends AppWrapper {
         throw new Error('The size is invalid (0 bytes).');
       }
 
+      // Apply the game settings
+      this.applyGameSettings();
+
       // Copy BIOS files
       for (let bios in this.biosBuffers) {
         const bytes = this.biosBuffers[bios];
         const path = '/home/web_user/retroarch/userdata/system/' + bios;
         FS.writeFile(path, bytes);
-        const res = FS.analyzePath(path, true);
-        console.log(res.exists);
       }
 
+      // Write rom file
       FS.writeFile(ROM, this.romBytes);
       this.romBytes = null;
 
       await this.wait(2000);
+
+      // Load the save state
+      this.saveStatePath = app.getStoragePath(`${this.uid}/${this.SAVE_NAME}`);
+      await this.loadState();
 
       // const start = Date.now();
       // const hashFile = Module.cwrap('hash_generate_from_file', 'null', ['number', 'string']);
@@ -186,6 +396,7 @@ export class Emulator extends AppWrapper {
 
       await this.wait(10000);
 
+      //window.readyAudioContext = new window.AudioContext({sampleRate: 19200});
       window.readyAudioContext = new window.AudioContext();
       window.readyAudioContext.resume();
       console.log(window.readyAudioContext);
@@ -198,28 +409,49 @@ export class Emulator extends AppWrapper {
         LOG.error(e);
       }
 
+      // Bilinear filter
+      if (settings.isBilinearFilterEnabled()) {
+        // TODO: Figure out a way to do this without re-init of video
+        await this.wait(1000);
+        Module._wrc_enable_bilinear_filter(1);
+      }
+
       setTimeout(() => {
         app.setState({ loadingMessage: null });
       }, 50);
 
-      const frameRate = 60; // TODO: Determine proper framerate
       this.displayLoop = new DisplayLoop(
-        frameRate,
-        true,
-        debug,
-        true /* force native */,
+        60,    // frame rate (ignored due to no wait)
+        true, // vsync
+        debug, // debug
+        true, // force native
+        false,  // no wait
       );
+      this.displayLoop.setAdjustTimestampEnabled(false);
 
       Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
       window.onresize = () => {
         Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
       };
 
+      let exit = false;
+
       // Start the display loop
       this.displayLoop.start(() => {
-        this.pollControls();
-        Module._emscripten_mainloop();
-      });
+        try {
+          if (!exit) {
+            this.pollControls();
+            Module._emscripten_mainloop();
+          }
+        } catch (e) {
+          if (e.status === 1971) {
+            // Menu was displayed, should never happen (bad rom?)
+            app.exit(Resources.getText(TEXT_IDS.ERROR_UNKNOWN));
+            exit = true;
+          }
+        }
+      });;
+
     } catch (e) {
       LOG.error(e);
       app.exit(e);

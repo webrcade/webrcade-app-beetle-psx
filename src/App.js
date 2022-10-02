@@ -120,13 +120,16 @@ class App extends WebrcadeApp {
     const { appProps, emulator, ModeEnum } = this;
 
     try {
+      // Get the uid
+      const uid = appProps.uid;
+      if (!uid) throw new Error('A unique identifier was not found for the game.');
+
       // Get the ROM location that was specified
       const rom = appProps.rom;
       if (!rom) throw new Error('A ROM file was not specified.');
 
       const bios = appProps.psx_bios;
       if (!bios) throw new Error('BIOS file(s) were not specified.');
-      console.log(bios);
 
       let biosBuffers = null;
       let frontend = null;
@@ -147,7 +150,7 @@ class App extends WebrcadeApp {
         .then(() => new FetchAppData(rom).fetch())
         .then((response) => this.fetchResponseBuffer(response))
         .then((bytes) => {
-          emulator.setRoms(frontend, biosBuffers, bytes);
+          emulator.setRoms(uid, frontend, biosBuffers, bytes);
           return bytes;
         })
         .then(() =>
@@ -210,7 +213,6 @@ class App extends WebrcadeApp {
   renderCanvas() {
     return (
       <canvas
-        style={this.getCanvasStyles()}
         ref={(canvas) => {
           this.canvas = canvas;
         }}
