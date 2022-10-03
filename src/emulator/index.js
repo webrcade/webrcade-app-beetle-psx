@@ -55,7 +55,8 @@ export class Emulator extends AppWrapper {
   RA_SYSTEM_DIR = this.RA_DIR + 'system/';
   ROM = this.RA_DIR + 'game.chd';
 
-  SRAM_NAME = 'game.srm';
+  SLOT0_NAME = 'game.srm';
+  SLOT1_NAME = 'game.1.mcr';
   SAVE_NAME = 'sav';
 
   setRoms(uid, frontendArray, biosBuffers, romBytes) {
@@ -94,16 +95,31 @@ export class Emulator extends AppWrapper {
       // Save to files
       Module._cmd_savefiles();
 
-      const path = `/home/web_user/retroarch/userdata/saves/${this.SRAM_NAME}`
-      let s = FS.readFile(path);
-      if (s) {
-        const files = [{
-          name: this.SAVE_NAME,
-          content: s,
-      }];
+      let files = [];
+
+      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`
+      const slot0Save = FS.readFile(slot0);
+      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`
+      const slot1Save = FS.readFile(slot1);
+
+      if (slot0Save || slot1Save) {
+        if (slot0Save) {
+          LOG.info('found slot0 file.');
+          files.push({
+            name: this.SLOT0_NAME,
+            content: slot0Save,
+          });
+        }
+        if (slot1Save) {
+          LOG.info('found slot1 file.');
+          files.push({
+            name: this.SLOT1_NAME,
+            content: slot1Save,
+          });
+        }
 
         if (await this.getSaveManager().checkFilesChanged(files)) {
-          LOG.info('saving sram.');
+          LOG.info('saving state.');
 
           await this.getSaveManager().save(
             saveStatePath,
@@ -123,10 +139,13 @@ export class Emulator extends AppWrapper {
 
     // Write the save state (if applicable)
     try {
-      // Create the save path (MEM FS)
-      const path = `/home/web_user/retroarch/userdata/saves/${this.SRAM_NAME}`
-      const res = FS.analyzePath(path, true);
-      if (!res.exists) {
+
+      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`
+      const slot0Res = FS.analyzePath(slot0, true);
+      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`
+      const slot1Res = FS.analyzePath(slot1, true);
+
+      if (!slot0Res.exists && !slot1Res.exists) {
         // Load
         const files = await this.getSaveManager().load(
           saveStatePath,
@@ -136,10 +155,13 @@ export class Emulator extends AppWrapper {
         if (files) {
           for (let i = 0; i < files.length; i++) {
             const f = files[i];
-            if (f.name === this.SAVE_NAME) {
-              LOG.info('writing sram file.');
-              FS.writeFile(path, f.content);
-              break;
+            if (f.name === this.SLOT0_NAME) {
+              LOG.info('writing slot0 file');
+              FS.writeFile(slot0, f.content);
+            }
+            if (f.name === this.SLOT1_NAME) {
+              LOG.info('writing slot1 file');
+              FS.writeFile(slot1, f.content);
             }
           }
 
