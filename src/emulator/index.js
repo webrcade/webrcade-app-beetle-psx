@@ -387,6 +387,13 @@ export class Emulator extends AppWrapper {
     try {
       this.canvas = canvas;
 
+      setTimeout(() => {
+        app.setState({ loadingMessage: null, loadingPercent: null });
+        setTimeout(() => {
+          app.setState({ loadingMessage: 'Starting' });
+        }, 2000);
+      }, 2000);
+
       if (this.romBytes.byteLength === 0) {
         throw new Error('The size is invalid (0 bytes).');
       }

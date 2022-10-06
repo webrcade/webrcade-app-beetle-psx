@@ -1,6 +1,7 @@
 import {
   blobToStr,
   md5,
+  removeEmptyArrayItems,
   setMessageAnchorId,
   settings,
   FetchAppData,
@@ -124,12 +125,19 @@ class App extends WebrcadeApp {
       const uid = appProps.uid;
       if (!uid) throw new Error('A unique identifier was not found for the game.');
 
-      // Get the ROM location that was specified
-      const rom = appProps.rom;
-      if (!rom) throw new Error('A ROM file was not specified.');
+      // Get the discs location that was specified
+      let discs = appProps.discs;
+      if (discs) discs = removeEmptyArrayItems(discs);
+      if (!discs || discs.length === 0) throw new Error('A disc was not specified.');
 
-      const bios = appProps.psx_bios;
-      if (!bios) throw new Error('BIOS file(s) were not specified.');
+      let bios = appProps.psx_bios;
+      if (bios) bios = removeEmptyArrayItems(bios);
+      if (!bios || bios.length === 0) throw new Error('BIOS file(s) were not specified.');
+
+      // TODO: Disc select screen if discs length is > 1
+      // Show a settings screen with the list of discs to choose from
+      // ...
+
 
       let biosBuffers = null;
       let frontend = null;
@@ -147,7 +155,7 @@ class App extends WebrcadeApp {
         // .then(() => this.loadBrowserFs())
         // .then(() => this.loadFrontend())
         // .then((f) => {frontend = f})
-        .then(() => new FetchAppData(rom).fetch())
+        .then(() => new FetchAppData(discs[0]).fetch())
         .then((response) => this.fetchResponseBuffer(response))
         .then((bytes) => {
           emulator.setRoms(uid, frontend, biosBuffers, bytes);
@@ -156,8 +164,7 @@ class App extends WebrcadeApp {
         .then(() =>
           this.setState({
             mode: ModeEnum.LOADED,
-            loadingMessage: 'Starting',
-            /*loadingPercent: null*/
+            loadingMessage: 'Loading',
           }),
         )
         .catch((msg) => {
