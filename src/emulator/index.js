@@ -46,6 +46,7 @@ export class Emulator extends AppWrapper {
     this.escapeCount = -1;
     this.audioPlaying = false;
     this.analogMode = this.getProps().analog;
+    this.swapControllers = false;
     this.saveStatePath = null;
 
     LOG.info("## Initial analog mode: " + this.analogMode);
@@ -53,17 +54,20 @@ export class Emulator extends AppWrapper {
 
   RA_DIR = '/home/web_user/retroarch/';
   RA_SYSTEM_DIR = this.RA_DIR + 'system/';
-  ROM = this.RA_DIR + 'game.chd';
 
   SLOT0_NAME = 'game.srm';
   SLOT1_NAME = 'game.1.mcr';
   SAVE_NAME = 'sav';
 
-  setRoms(uid, frontendArray, biosBuffers, romBytes) {
+  setRoms(uid, frontendArray, biosBuffers, romBytes, ext) {
     this.uid = uid;
     this.frontendArray = frontendArray;
     this.biosBuffers = biosBuffers;
     this.romBytes = romBytes;
+    this.ext = ext;
+    this.disc = this.RA_DIR + "game." + (
+      ext != null && ext === "pbp" ? "pbp" : "chd"
+    );
   }
 
   createControllers() {
@@ -249,8 +253,14 @@ export class Emulator extends AppWrapper {
       const analog1x= controllers.getAxisValue(i, 1, true);
       const analog1y = controllers.getAxisValue(i, 1, false);
 
+      let controller = i;
+      if (this.swapControllers) {
+        if (controller === 0) controller = 1;
+        else if (controller === 1) controller = 0;
+      }
+
       window.Module._wrc_set_input(
-        i,
+        controller,
         input,
         analog0x,
         analog0y,
@@ -364,13 +374,29 @@ export class Emulator extends AppWrapper {
     if (props.multitap) {
       LOG.info("## multitap on");
       options |= this.OPT1;
+    } else {
+      LOG.info("## multitap off");
     }
     // analog
     if (this.analogMode) {
       LOG.info("## analog on");
       options |= this.OPT2;
+    } else {
+      LOG.info("## analog off");
     }
     Module._wrc_set_options(options);
+  }
+
+  getSwapControllers() {
+    return this.swapControllers;
+  }
+
+  setSwapControllers(swap) {
+    this.swapControllers = swap;
+  }
+
+  getAnalogMode() {
+    return this.analogMode;
   }
 
   setAnalogMode(analog) {
@@ -381,7 +407,7 @@ export class Emulator extends AppWrapper {
   }
 
   async onStart(canvas) {
-    const { app, debug, ROM } = this;
+    const { app, debug, disc } = this;
     const { FS, Module } = window;
 
     try {
@@ -409,7 +435,7 @@ export class Emulator extends AppWrapper {
       }
 
       // Write rom file
-      FS.writeFile(ROM, this.romBytes);
+      FS.writeFile(disc, this.romBytes);
       this.romBytes = null;
 
       await this.wait(2000);
@@ -432,7 +458,7 @@ export class Emulator extends AppWrapper {
 
       try {
         //Module.callMain();
-        Module.callMain(['-v', ROM]);
+        Module.callMain(['-v', disc]);
         //Module.resumeMainLoop();
       } catch (e) {
         LOG.error(e);

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Component } from 'react';
+import { PsxSettingsEditor } from './settings';
 
-import { GamepadControlsTab, KeyboardControlsTab } from './controls';
+import { GamepadControlsTab, GamepadAnalogControlsTab, KeyboardControlsTab } from './controls';
 
 import {
   CustomPauseScreen,
@@ -10,6 +11,7 @@ import {
   KeyboardWhiteImage,
   PauseScreenButton,
   Resources,
+  SettingsAppWhiteImage,
   TEXT_IDS,
 } from '@webrcade/app-common';
 
@@ -24,15 +26,25 @@ export class EmulatorPauseScreen extends Component {
   ModeEnum = {
     PAUSE: 'pause',
     CONTROLS: 'controls',
+    PSX_SETTINGS: 'psx-settings',
   };
 
-  ADDITIONAL_BUTTON_REFS = [React.createRef()];
+  ADDITIONAL_BUTTON_REFS = [React.createRef(), React.createRef()];
 
   render() {
     const { ADDITIONAL_BUTTON_REFS, ModeEnum } = this;
-    const { appProps, closeCallback, exitCallback, isEditor, isStandalone } =
+    const { appProps, closeCallback, emulator, exitCallback, isEditor, isStandalone } =
       this.props;
     const { mode } = this.state;
+
+    const analog = emulator.getAnalogMode();
+    const gamepad = (analog ?
+      <GamepadAnalogControlsTab /> : <GamepadControlsTab />);
+    const gamepadLabel = analog ?
+      Resources.getText(
+        TEXT_IDS.GAMEPAD_CONTROLS_DETAIL,
+        Resources.getText(TEXT_IDS.ANALOG)) :
+      Resources.getText(TEXT_IDS.GAMEPAD_CONTROLS)
 
     return (
       <>
@@ -56,6 +68,17 @@ export class EmulatorPauseScreen extends Component {
                   this.setState({ mode: ModeEnum.CONTROLS });
                 }}
               />,
+              <PauseScreenButton
+                imgSrc={SettingsAppWhiteImage}
+                buttonRef={ADDITIONAL_BUTTON_REFS[1]}
+                label="PlayStation Settings"
+                onHandlePad={(focusGrid, e) =>
+                  focusGrid.moveFocus(e.type, ADDITIONAL_BUTTON_REFS[1])
+                }
+                onClick={() => {
+                  this.setState({ mode: ModeEnum.PSX_SETTINGS });
+                }}
+              />,
             ]}
           />
         ) : null}
@@ -65,8 +88,8 @@ export class EmulatorPauseScreen extends Component {
             tabs={[
               {
                 image: GamepadWhiteImage,
-                label: Resources.getText(TEXT_IDS.GAMEPAD_CONTROLS),
-                content: <GamepadControlsTab />,
+                label: gamepadLabel,
+                content: gamepad
               },
               {
                 image: KeyboardWhiteImage,
@@ -75,6 +98,9 @@ export class EmulatorPauseScreen extends Component {
               },
             ]}
           />
+        ) : null}
+        {mode === ModeEnum.PSX_SETTINGS ? (
+          <PsxSettingsEditor emulator={emulator} onClose={closeCallback} />
         ) : null}
       </>
     );
