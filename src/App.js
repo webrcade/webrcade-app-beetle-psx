@@ -6,6 +6,7 @@ import {
   settings,
   FetchAppData,
   Resources,
+  UrlUtil,
   WebrcadeApp,
   LOG,
   TEXT_IDS,
@@ -108,6 +109,20 @@ class App extends WebrcadeApp {
     }
   }
 
+  getExtension(url, fad, res) {
+    let filename = fad.getFilename(res);
+    if (!filename) {
+      filename = UrlUtil.getFileName(url);
+    }
+    if (filename) {
+      const comps = filename.split(".");
+      if (comps.length > 1) {
+        return comps[comps.length - 1].toLowerCase();
+      }
+    }
+    return null;
+  }
+
   componentDidMount() {
     super.componentDidMount();
 
@@ -141,6 +156,10 @@ class App extends WebrcadeApp {
 
       let biosBuffers = null;
       let frontend = null;
+      let extension = null;
+
+      const discUrl = discs[0];
+      const fad = new FetchAppData(discUrl);
 
       // Load Emscripten and ROM binaries
       settings
@@ -155,10 +174,11 @@ class App extends WebrcadeApp {
         // .then(() => this.loadBrowserFs())
         // .then(() => this.loadFrontend())
         // .then((f) => {frontend = f})
-        .then(() => new FetchAppData(discs[0]).fetch())
+        .then(() => fad.fetch())
+        .then((response) => {extension = this.getExtension(discUrl, fad, response); return response;})
         .then((response) => this.fetchResponseBuffer(response))
         .then((bytes) => {
-          emulator.setRoms(uid, frontend, biosBuffers, bytes);
+          emulator.setRoms(uid, frontend, biosBuffers, bytes, extension);
           return bytes;
         })
         .then(() =>
