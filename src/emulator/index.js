@@ -34,6 +34,9 @@ export class Emulator extends AppWrapper {
 
   OPT1 = 1;
   OPT2 = 1 << 1;
+  OPT3 = 1 << 2;
+  OPT4 = 1 << 3;
+  OPT5 = 1 << 4;
 
   constructor(app, debug = false) {
     super(app, debug);
@@ -384,6 +387,21 @@ export class Emulator extends AppWrapper {
     } else {
       LOG.info("## analog off");
     }
+    // Alternate BIOS files
+    for (let bios in this.biosBuffers) {
+      if (bios === 'PSXONPSP660.bin') {
+        options |= this.OPT3;
+        LOG.info('## using bios: ' + bios);
+      } else if (bios === 'ps1_rom.bin') {
+        options |= this.OPT4;
+        LOG.info('## using bios: ' + bios);
+      }
+    }
+    // Skip BIOS
+    if (props.skipBios) {
+      options |= this.OPT5;
+      LOG.info("## skip BIOS on");
+    }
     Module._wrc_set_options(options);
   }
 
@@ -404,6 +422,20 @@ export class Emulator extends AppWrapper {
     LOG.info("## Game setAnalogMode: " + isAnalog);
     this.analogMode = isAnalog;
     this.applyGameSettings();
+  }
+
+  resizeScreen(canvas) {
+    // Determine the zoom level
+    let zoomLevel = 0;
+    if (this.getProps().zoomLevel) {
+      zoomLevel = this.getProps().zoomLevel;
+    }
+
+    const size = 96 + zoomLevel;
+    canvas.style.setProperty('width', `${size}vw`, 'important');
+    canvas.style.setProperty('height', `${size}vh`, 'important');
+    canvas.style.setProperty('max-width', `calc(${size}vh*1.22)`, 'important');
+    canvas.style.setProperty('max-height', `calc(${size}vw*0.82)`, 'important');
   }
 
   async onStart(canvas) {
@@ -484,9 +516,15 @@ export class Emulator extends AppWrapper {
       );
       this.displayLoop.setAdjustTimestampEnabled(false);
 
-      Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
+      setTimeout(() => {
+        this.resizeScreen(canvas);
+        Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
+        setTimeout(() => { this.resizeScreen(canvas) }, 1);
+      }, 50);
+
       window.onresize = () => {
         Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
+        setTimeout(() => { this.resizeScreen(canvas) }, 1);
       };
 
       let exit = false;

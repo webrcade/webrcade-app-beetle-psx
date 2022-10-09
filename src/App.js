@@ -13,19 +13,31 @@ import {
 } from '@webrcade/app-common';
 import { Emulator } from './emulator';
 import { EmulatorPauseScreen } from './pause';
+import { DiscSelectionEditor } from './selectdisc'
 
 import './App.scss';
 
 class App extends WebrcadeApp {
   emulator = null;
 
-  // TODO: Support alternative BIOS files
+  ALT_BIOS = {
+    'c53ca5908936d412331790f4426c6c33': 'PSXONPSP660.bin',
+    '81bbe60ba7a3d1cea1d48c14cbcc647b': 'ps1_rom.bin'
+  }
 
   BIOS = {
     '8dd7d5296a650fac7319bce665a6a53c': 'scph5500.bin', // JPN
     '490f666e1afb15b7362b406ed1cea246': 'scph5501.bin', // USA
     '32736f17079d0b2b7024407c39bd3050': 'scph5502.bin', // EUR
   };
+
+  MODE_DISC_SELECT = "discSelectionMode";
+
+  constructor() {
+    super();
+
+    this.state.mode = null;
+  }
 
   async loadBrowserFs() {
     return new Promise((resolve, reject) => {
@@ -47,7 +59,7 @@ class App extends WebrcadeApp {
   }
 
   async fetchBios(bios) {
-    const biosBuffers = {};
+    let biosBuffers = {};
     for (let i = 0; i < bios.length; i++) {
       const biosUrl = bios[i];
       if (biosUrl.trim().length === 0) {
@@ -59,24 +71,44 @@ class App extends WebrcadeApp {
       const blob = await res.blob();
       const blobStr = await blobToStr(blob);
       const md5Hash = md5(blobStr);
-      const name = this.BIOS[md5Hash];
-
+      let name = this.BIOS[md5Hash];
+      if (!name) {
+        name = this.ALT_BIOS[md5Hash];
+      }
       if (name) {
         biosBuffers[name] = new Uint8Array(await blob.arrayBuffer());
       }
     }
 
-    for (let p in this.BIOS) {
-      const f = this.BIOS[p];
-      let found = false;
+    let haveBuffers = false;
+    for (let p in this.ALT_BIOS) {
+      const f = this.ALT_BIOS[p];
       for (let n in biosBuffers) {
         if (f === n) {
-          found = true;
+          const buff = biosBuffers[n];
+          biosBuffers = {}
+          biosBuffers[n] = buff;
+          haveBuffers = true;
           break;
         }
       }
-      if (!found) throw new Error(`Unable to find BIOS file: ${f}`);
     }
+
+    if (!haveBuffers) {
+      for (let p in this.BIOS) {
+        const f = this.BIOS[p];
+        let found = false;
+        for (let n in biosBuffers) {
+          if (f === n) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) throw new Error(`Unable to find BIOS file: ${f}`);
+      }
+    }
+
+    console.log(biosBuffers);
 
     return biosBuffers;
   }
@@ -123,42 +155,19 @@ class App extends WebrcadeApp {
     return null;
   }
 
-  componentDidMount() {
-    super.componentDidMount();
-
+  start(discIndex) {
     setMessageAnchorId('canvas');
 
-    // Create the emulator
-    if (this.emulator === null) {
-      this.emulator = new Emulator(this, this.isDebug());
-    }
+    const { bios, discs, emulator, uid, ModeEnum } = this;
 
-    const { appProps, emulator, ModeEnum } = this;
+    this.setState({mode: ModeEnum.LOADING})
 
     try {
-      // Get the uid
-      const uid = appProps.uid;
-      if (!uid) throw new Error('A unique identifier was not found for the game.');
-
-      // Get the discs location that was specified
-      let discs = appProps.discs;
-      if (discs) discs = removeEmptyArrayItems(discs);
-      if (!discs || discs.length === 0) throw new Error('A disc was not specified.');
-
-      let bios = appProps.psx_bios;
-      if (bios) bios = removeEmptyArrayItems(bios);
-      if (!bios || bios.length === 0) throw new Error('BIOS file(s) were not specified.');
-
-      // TODO: Disc select screen if discs length is > 1
-      // Show a settings screen with the list of discs to choose from
-      // ...
-
-
       let biosBuffers = null;
       let frontend = null;
       let extension = null;
 
-      const discUrl = discs[0];
+      const discUrl = discs[discIndex];
       const fad = new FetchAppData(discUrl);
 
       // Load Emscripten and ROM binaries
@@ -195,6 +204,36 @@ class App extends WebrcadeApp {
         });
     } catch (e) {
       this.exit(e);
+    }
+  }
+
+  componentDidMount() {
+    super.componentDidMount();
+
+    const { appProps } = this;
+
+    // Create the emulator
+    if (this.emulator === null) {
+      this.emulator = new Emulator(this, this.isDebug());
+
+      // Get the uid
+      this.uid = appProps.uid;
+      if (!this.uid) throw new Error('A unique identifier was not found for the game.');
+
+      // Get the discs location that was specified
+      this.discs = appProps.discs;
+      if (this.discs) this.discs = removeEmptyArrayItems(this.discs);
+      if (!this.discs || this.discs.length === 0) throw new Error('A disc was not specified.');
+
+      this.bios = appProps.psx_bios;
+      if (this.bios) this.bios = removeEmptyArrayItems(this.bios);
+      if (!this.bios || this.bios.length === 0) throw new Error('BIOS file(s) were not specified.');
+
+      if (this.discs.length > 1) {
+        this.setState({mode: this.MODE_DISC_SELECT});
+      } else {
+        this.start(0);
+      }
     }
   }
 
@@ -250,11 +289,14 @@ class App extends WebrcadeApp {
 
   render() {
     const { errorMessage, loadingMessage, mode } = this.state;
-    const { ModeEnum } = this;
+    const { ModeEnum, MODE_DISC_SELECT } = this;
 
     return (
       <>
         {super.render()}
+        {mode === MODE_DISC_SELECT && this.discs ?
+          <DiscSelectionEditor app={this}/> : null
+        }
         {mode === ModeEnum.LOADING || (loadingMessage && !errorMessage)
           ? this.renderLoading()
           : null}
