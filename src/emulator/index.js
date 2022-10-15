@@ -4,13 +4,39 @@ import {
   AppWrapper,
   Controller,
   Controllers,
-  DefaultKeyCodeToControlMapping,
+  KeyCodeToControlMapping,
   DisplayLoop,
   Resources,
   CIDS,
+  KCODES,
   LOG,
   TEXT_IDS
 } from '@webrcade/app-common';
+
+import { Prefs } from './prefs';
+
+class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
+  constructor() {
+    super({
+      [KCODES.ENTER]: CIDS.START,
+      [KCODES.SHIFT]: CIDS.SELECT,
+      [KCODES.ESCAPE]: CIDS.ESCAPE,
+      [KCODES.ARROW_UP]: CIDS.UP,
+      [KCODES.ARROW_DOWN]: CIDS.DOWN,
+      [KCODES.ARROW_RIGHT]: CIDS.RIGHT,
+      [KCODES.ARROW_LEFT]: CIDS.LEFT,
+      [KCODES.D]: CIDS.Y, // Triangle
+      [KCODES.X]: CIDS.B, // Circle
+      [KCODES.Z]: CIDS.A, // Cross
+      [KCODES.S]: CIDS.X, // Square
+      [KCODES.W]: CIDS.LBUMP, // L1
+      [KCODES.E]: CIDS.LTRIG, // L2
+      [KCODES.R]: CIDS.RBUMP, // R1
+      [KCODES.T]: CIDS.RTRIG, // R2
+    });
+  }
+}
+
 
 export class Emulator extends AppWrapper {
 
@@ -51,6 +77,7 @@ export class Emulator extends AppWrapper {
     this.analogMode = this.getProps().analog;
     this.swapControllers = false;
     this.saveStatePath = null;
+    this.prefs = new Prefs(this);
 
     LOG.info("## Initial analog mode: " + this.analogMode);
   }
@@ -75,7 +102,7 @@ export class Emulator extends AppWrapper {
 
   createControllers() {
     return new Controllers([
-      new Controller(new DefaultKeyCodeToControlMapping()),
+      new Controller(new PsxKeyCodeToControlMapping()),
       new Controller(),
       new Controller(),
       new Controller(),
@@ -88,6 +115,10 @@ export class Emulator extends AppWrapper {
 
   async onShowPauseMenu() {
     await this.saveState();
+  }
+
+  getPrefs() {
+    return this.prefs;
   }
 
   async saveState() {
@@ -424,6 +455,15 @@ export class Emulator extends AppWrapper {
     this.applyGameSettings();
   }
 
+  isBilinearFilterEnabled() {
+    return settings.isBilinearFilterEnabled() || this.prefs.isBilinearEnabled();
+  }
+
+  updateBilinearFilter() {
+    const enabled = this.isBilinearFilterEnabled();
+    window.Module._wrc_enable_bilinear_filter(enabled ? 1 : 0);
+  }
+
   resizeScreen(canvas) {
     // Determine the zoom level
     let zoomLevel = 0;
@@ -455,6 +495,9 @@ export class Emulator extends AppWrapper {
       if (this.romBytes.byteLength === 0) {
         throw new Error('The size is invalid (0 bytes).');
       }
+
+      // Load preferences
+      await this.prefs.load();
 
       // Apply the game settings
       this.applyGameSettings();
@@ -497,7 +540,7 @@ export class Emulator extends AppWrapper {
       }
 
       // Bilinear filter
-      if (settings.isBilinearFilterEnabled()) {
+      if (this.isBilinearFilterEnabled()) {
         // TODO: Figure out a way to do this without re-init of video
         await this.wait(1000);
         Module._wrc_enable_bilinear_filter(1);

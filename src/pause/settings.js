@@ -7,7 +7,8 @@ import {
   FieldRow,
   FieldLabel,
   FieldControl,
-  SettingsAppWhiteImage,
+  TelevisionWhiteImage,
+  GamepadWhiteImage,
   Switch,
   WebrcadeContext,
 } from '@webrcade/app-common';
@@ -28,6 +29,8 @@ export class PsxSettingsEditor extends Component {
     this.setState({
       values: {
         analogMode: emulator.getAnalogMode(),
+        origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
+        bilinearMode: emulator.getPrefs().isBilinearEnabled(),
         swapControllers: emulator.getSwapControllers()
       },
     });
@@ -51,6 +54,11 @@ export class PsxSettingsEditor extends Component {
         onOk={() => {
           emulator.setAnalogMode(values.analogMode ? 1 : 0);
           emulator.setSwapControllers(values.swapControllers);
+          if (values.origBilinearMode !== values.bilinearMode) {
+            emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
+            emulator.updateBilinearFilter();
+            emulator.getPrefs().save();
+          }
           onClose();
         }}
         onClose={onClose}
@@ -58,12 +66,25 @@ export class PsxSettingsEditor extends Component {
         onTabChange={(oldTab, newTab) => this.setState({ tabIndex: newTab })}
         tabs={[
           {
-            image: SettingsAppWhiteImage,
-            label: 'PlayStation Settings (Session only)',
+            image: GamepadWhiteImage,
+            label: 'Controller Settings (Session only)',
             content: (
               <PsxSettingsTab
                 emulator={emulator}
                 isActive={tabIndex === 0}
+                setFocusGridComps={setFocusGridComps}
+                values={values}
+                setValues={setValues}
+              />
+            ),
+          },
+          {
+            image: TelevisionWhiteImage,
+            label: 'Display Settings',
+            content: (
+              <PsxDisplaySettingsTab
+                emulator={emulator}
+                isActive={tabIndex === 1}
                 setFocusGridComps={setFocusGridComps}
                 values={values}
                 setValues={setValues}
@@ -132,3 +153,46 @@ class PsxSettingsTab extends FieldsTab {
   }
 }
 PsxSettingsTab.contextType = WebrcadeContext;
+
+class PsxDisplaySettingsTab extends FieldsTab {
+  constructor() {
+    super();
+    this.bilinearRef = React.createRef();
+    this.gridComps = [[this.bilinearRef]];
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { gridComps } = this;
+    const { setFocusGridComps } = this.props;
+    const { isActive } = this.props;
+
+    if (isActive && isActive !== prevProps.isActive) {
+      setFocusGridComps(gridComps);
+    }
+  }
+
+  render() {
+    const { bilinearRef } = this;
+    const { focusGrid } = this.context;
+    const { setValues, values } = this.props;
+
+    return (
+      <>
+        <FieldRow>
+          <FieldLabel>Force bilinear filter</FieldLabel>
+          <FieldControl>
+            <Switch
+              ref={bilinearRef}
+              onPad={(e) => focusGrid.moveFocus(e.type, bilinearRef)}
+              onChange={(e) => {
+                setValues({ ...values, ...{ bilinearMode: e.target.checked } });
+              }}
+              checked={values.bilinearMode}
+            />
+          </FieldControl>
+        </FieldRow>
+      </>
+    );
+  }
+}
+PsxDisplaySettingsTab.contextType = WebrcadeContext;

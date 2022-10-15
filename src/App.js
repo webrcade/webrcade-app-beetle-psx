@@ -214,25 +214,30 @@ class App extends WebrcadeApp {
 
     // Create the emulator
     if (this.emulator === null) {
-      this.emulator = new Emulator(this, this.isDebug());
+      try {
+        this.emulator = new Emulator(this, this.isDebug());
 
-      // Get the uid
-      this.uid = appProps.uid;
-      if (!this.uid) throw new Error('A unique identifier was not found for the game.');
+        // Get the uid
+        this.uid = appProps.uid;
+        if (!this.uid) throw new Error('A unique identifier was not found for the game.');
 
-      // Get the discs location that was specified
-      this.discs = appProps.discs;
-      if (this.discs) this.discs = removeEmptyArrayItems(this.discs);
-      if (!this.discs || this.discs.length === 0) throw new Error('A disc was not specified.');
+        // Get the discs location that was specified
+        this.discs = appProps.discs;
+        if (this.discs) this.discs = removeEmptyArrayItems(this.discs);
+        if (!this.discs || this.discs.length === 0) throw new Error('A disc was not specified.');
 
-      this.bios = appProps.psx_bios;
-      if (this.bios) this.bios = removeEmptyArrayItems(this.bios);
-      if (!this.bios || this.bios.length === 0) throw new Error('BIOS file(s) were not specified.');
+        this.bios = appProps.psx_bios;
+        if (this.bios) this.bios = removeEmptyArrayItems(this.bios);
+        if (!this.bios || this.bios.length === 0) throw new Error('BIOS file(s) were not specified.');
 
-      if (this.discs.length > 1) {
-        this.setState({mode: this.MODE_DISC_SELECT});
-      } else {
-        this.start(0);
+        if (this.discs.length > 1) {
+          this.setState({mode: this.MODE_DISC_SELECT});
+        } else {
+          this.start(0);
+        }
+      } catch (msg) {
+        LOG.error(msg);
+        this.exit( msg ? msg : Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME));
       }
     }
   }

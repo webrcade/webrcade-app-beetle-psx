@@ -57,12 +57,12 @@ export class KeyboardControlsTab extends ControlsTab {
         {this.renderKey('ArrowRight', 'D-pad (Right)')}
         {this.renderKey('KeyX', 'Circle')}
         {this.renderKey('KeyZ', 'Cross')}
-        {this.renderKey('KeyS', 'Triangle')}
-        {this.renderKey('KeyA', 'Square')}
-        {this.renderKey('KeyQ', 'L1')}
-        {/* {this.renderKey('KeyZ', 'L2')} */}
-        {this.renderKey('KeyW', 'R1')}
-        {/* {this.renderKey('KeyA', 'R2')} */}
+        {this.renderKey('KeyD', 'Triangle')}
+        {this.renderKey('KeyS', 'Square')}
+        {this.renderKey('KeyW', 'L1')}
+        {this.renderKey('KeyE', 'L2')}
+        {this.renderKey('KeyR', 'R1')}
+        {this.renderKey('KeyT', 'R2')}
       </>
     );
   }
