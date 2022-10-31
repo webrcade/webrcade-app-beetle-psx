@@ -26,7 +26,7 @@ export class DiscSelectionEditor extends Component {
     };
   }
 
-  componentDidMount() { }
+  componentDidMount() {}
 
   render() {
     const { app, onClose } = this.props;
@@ -44,7 +44,9 @@ export class DiscSelectionEditor extends Component {
       <EditorScreen
         showCancel={false}
         okLabel={Resources.getText(TEXT_IDS.CANCEL)}
-        onOk={() => { app.exit(0); }}
+        onOk={() => {
+          app.exit(0);
+        }}
         onClose={onClose}
         focusGridComps={focusGridComps}
         onTabChange={(oldTab, newTab) => this.setState({ tabIndex: newTab })}
@@ -82,7 +84,7 @@ class DiscSelectionTab extends FieldsTab {
     if (!this.gridComps) {
       const comps = [];
       for (let i = 0; i < app.discs.length; i++) {
-        comps.push([React.createRef()])
+        comps.push([React.createRef()]);
       }
       this.gridComps = comps;
       setTimeout(() => {
@@ -106,7 +108,9 @@ class DiscSelectionTab extends FieldsTab {
       for (let i = 0; i < app.discs.length; i++) {
         fields.push(
           <FieldRow>
-            <FieldLabel>{Resources.getText(TEXT_IDS.SELECT_DISC, (i + 1))}</FieldLabel>
+            <FieldLabel>
+              {Resources.getText(TEXT_IDS.SELECT_DISC, i + 1)}
+            </FieldLabel>
             <FieldControl>
               <div>
                 <ImageButton
@@ -114,21 +118,19 @@ class DiscSelectionTab extends FieldsTab {
                   imgSrc={PlayArrowBlackImage}
                   hoverImgSrc={PlayArrowWhiteImage}
                   label={Resources.getText(TEXT_IDS.LOAD)}
-                  onPad={e => focusGrid.moveFocus(e.type, gridComps[i][0])}
-                  onClick={() => {app.start(i)}}
+                  onPad={(e) => focusGrid.moveFocus(e.type, gridComps[i][0])}
+                  onClick={() => {
+                    app.start(i);
+                  }}
                 />
               </div>
             </FieldControl>
-          </FieldRow>
-        )
+          </FieldRow>,
+        );
       }
     }
 
-    return (
-      <>
-        {fields}
-      </>
-    );
+    return <>{fields}</>;
   }
 }
 DiscSelectionTab.contextType = WebrcadeContext;

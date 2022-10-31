@@ -2,7 +2,11 @@ import React from 'react';
 import { Component } from 'react';
 import { PsxSettingsEditor } from './settings';
 
-import { GamepadControlsTab, GamepadAnalogControlsTab, KeyboardControlsTab } from './controls';
+import {
+  GamepadControlsTab,
+  GamepadAnalogControlsTab,
+  KeyboardControlsTab,
+} from './controls';
 
 import {
   CustomPauseScreen,
@@ -33,18 +37,28 @@ export class EmulatorPauseScreen extends Component {
 
   render() {
     const { ADDITIONAL_BUTTON_REFS, ModeEnum } = this;
-    const { appProps, closeCallback, emulator, exitCallback, isEditor, isStandalone } =
-      this.props;
+    const {
+      appProps,
+      closeCallback,
+      emulator,
+      exitCallback,
+      isEditor,
+      isStandalone,
+    } = this.props;
     const { mode } = this.state;
 
     const analog = emulator.getAnalogMode();
-    const gamepad = (analog ?
-      <GamepadAnalogControlsTab /> : <GamepadControlsTab />);
-    const gamepadLabel = analog ?
-      Resources.getText(
-        TEXT_IDS.GAMEPAD_CONTROLS_DETAIL,
-        Resources.getText(TEXT_IDS.ANALOG)) :
-      Resources.getText(TEXT_IDS.GAMEPAD_CONTROLS)
+    const gamepad = analog ? (
+      <GamepadAnalogControlsTab />
+    ) : (
+      <GamepadControlsTab />
+    );
+    const gamepadLabel = analog
+      ? Resources.getText(
+          TEXT_IDS.GAMEPAD_CONTROLS_DETAIL,
+          Resources.getText(TEXT_IDS.ANALOG),
+        )
+      : Resources.getText(TEXT_IDS.GAMEPAD_CONTROLS);
 
     return (
       <>
@@ -89,7 +103,7 @@ export class EmulatorPauseScreen extends Component {
               {
                 image: GamepadWhiteImage,
                 label: gamepadLabel,
-                content: gamepad
+                content: gamepad,
               },
               {
                 image: KeyboardWhiteImage,

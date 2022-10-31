@@ -1,6 +1,4 @@
-import {
-  BaseSettings,
-} from '@webrcade/app-common';
+import { BaseSettings } from '@webrcade/app-common';
 
 export class Prefs extends BaseSettings {
   constructor(emu) {
@@ -16,7 +14,10 @@ export class Prefs extends BaseSettings {
   }
 
   async load() {
-    this.bilinearEnabled = await super.loadBool(this.bilinearPath, this.bilinearEnabled);
+    this.bilinearEnabled = await super.loadBool(
+      this.bilinearPath,
+      this.bilinearEnabled,
+    );
   }
 
   async save() {

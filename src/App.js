@@ -13,7 +13,7 @@ import {
 } from '@webrcade/app-common';
 import { Emulator } from './emulator';
 import { EmulatorPauseScreen } from './pause';
-import { DiscSelectionEditor } from './selectdisc'
+import { DiscSelectionEditor } from './selectdisc';
 
 import './App.scss';
 
@@ -21,9 +21,9 @@ class App extends WebrcadeApp {
   emulator = null;
 
   ALT_BIOS = {
-    'c53ca5908936d412331790f4426c6c33': 'PSXONPSP660.bin',
-    '81bbe60ba7a3d1cea1d48c14cbcc647b': 'ps1_rom.bin'
-  }
+    c53ca5908936d412331790f4426c6c33: 'PSXONPSP660.bin',
+    '81bbe60ba7a3d1cea1d48c14cbcc647b': 'ps1_rom.bin',
+  };
 
   BIOS = {
     '8dd7d5296a650fac7319bce665a6a53c': 'scph5500.bin', // JPN
@@ -31,7 +31,7 @@ class App extends WebrcadeApp {
     '32736f17079d0b2b7024407c39bd3050': 'scph5502.bin', // EUR
   };
 
-  MODE_DISC_SELECT = "discSelectionMode";
+  MODE_DISC_SELECT = 'discSelectionMode';
 
   constructor() {
     super();
@@ -86,7 +86,7 @@ class App extends WebrcadeApp {
       for (let n in biosBuffers) {
         if (f === n) {
           const buff = biosBuffers[n];
-          biosBuffers = {}
+          biosBuffers = {};
           biosBuffers[n] = buff;
           haveBuffers = true;
           break;
@@ -147,7 +147,7 @@ class App extends WebrcadeApp {
       filename = UrlUtil.getFileName(url);
     }
     if (filename) {
-      const comps = filename.split(".");
+      const comps = filename.split('.');
       if (comps.length > 1) {
         return comps[comps.length - 1].toLowerCase();
       }
@@ -160,7 +160,7 @@ class App extends WebrcadeApp {
 
     const { bios, discs, emulator, uid, ModeEnum } = this;
 
-    this.setState({mode: ModeEnum.LOADING})
+    this.setState({ mode: ModeEnum.LOADING });
 
     try {
       let biosBuffers = null;
@@ -184,7 +184,10 @@ class App extends WebrcadeApp {
         // .then(() => this.loadFrontend())
         // .then((f) => {frontend = f})
         .then(() => fad.fetch())
-        .then((response) => {extension = this.getExtension(discUrl, fad, response); return response;})
+        .then((response) => {
+          extension = this.getExtension(discUrl, fad, response);
+          return response;
+        })
         .then((response) => this.fetchResponseBuffer(response))
         .then((bytes) => {
           emulator.setRoms(uid, frontend, biosBuffers, bytes, extension);
@@ -219,25 +222,30 @@ class App extends WebrcadeApp {
 
         // Get the uid
         this.uid = appProps.uid;
-        if (!this.uid) throw new Error('A unique identifier was not found for the game.');
+        if (!this.uid)
+          throw new Error('A unique identifier was not found for the game.');
 
         // Get the discs location that was specified
         this.discs = appProps.discs;
         if (this.discs) this.discs = removeEmptyArrayItems(this.discs);
-        if (!this.discs || this.discs.length === 0) throw new Error('A disc was not specified.');
+        if (!this.discs || this.discs.length === 0)
+          throw new Error('A disc was not specified.');
 
         this.bios = appProps.psx_bios;
         if (this.bios) this.bios = removeEmptyArrayItems(this.bios);
-        if (!this.bios || this.bios.length === 0) throw new Error('BIOS file(s) were not specified.');
+        if (!this.bios || this.bios.length === 0)
+          throw new Error('BIOS file(s) were not specified.');
 
         if (this.discs.length > 1) {
-          this.setState({mode: this.MODE_DISC_SELECT});
+          this.setState({ mode: this.MODE_DISC_SELECT });
         } else {
           this.start(0);
         }
       } catch (msg) {
         LOG.error(msg);
-        this.exit( msg ? msg : Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME));
+        this.exit(
+          msg ? msg : Resources.getText(TEXT_IDS.ERROR_RETRIEVING_GAME),
+        );
       }
     }
   }
@@ -299,9 +307,9 @@ class App extends WebrcadeApp {
     return (
       <>
         {super.render()}
-        {mode === MODE_DISC_SELECT && this.discs ?
-          <DiscSelectionEditor app={this}/> : null
-        }
+        {mode === MODE_DISC_SELECT && this.discs ? (
+          <DiscSelectionEditor app={this} />
+        ) : null}
         {mode === ModeEnum.LOADING || (loadingMessage && !errorMessage)
           ? this.renderLoading()
           : null}

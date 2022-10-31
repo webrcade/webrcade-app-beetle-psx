@@ -31,7 +31,7 @@ export class PsxSettingsEditor extends Component {
         analogMode: emulator.getAnalogMode(),
         origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
         bilinearMode: emulator.getPrefs().isBilinearEnabled(),
-        swapControllers: emulator.getSwapControllers()
+        swapControllers: emulator.getSwapControllers(),
       },
     });
   }
@@ -142,7 +142,10 @@ class PsxSettingsTab extends FieldsTab {
               ref={swapControllersRef}
               onPad={(e) => focusGrid.moveFocus(e.type, swapControllersRef)}
               onChange={(e) => {
-                setValues({ ...values, ...{ swapControllers: e.target.checked } });
+                setValues({
+                  ...values,
+                  ...{ swapControllers: e.target.checked },
+                });
               }}
               checked={values.swapControllers}
             />

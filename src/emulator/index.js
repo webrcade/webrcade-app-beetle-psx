@@ -10,7 +10,7 @@ import {
   CIDS,
   KCODES,
   LOG,
-  TEXT_IDS
+  TEXT_IDS,
 } from '@webrcade/app-common';
 
 import { Prefs } from './prefs';
@@ -25,21 +25,19 @@ class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
       [KCODES.ARROW_DOWN]: CIDS.DOWN,
       [KCODES.ARROW_RIGHT]: CIDS.RIGHT,
       [KCODES.ARROW_LEFT]: CIDS.LEFT,
-      [KCODES.D]: CIDS.Y, // Triangle
+      [KCODES.S]: CIDS.Y, // Triangle
       [KCODES.X]: CIDS.B, // Circle
       [KCODES.Z]: CIDS.A, // Cross
-      [KCODES.S]: CIDS.X, // Square
-      [KCODES.W]: CIDS.LBUMP, // L1
-      [KCODES.E]: CIDS.LTRIG, // L2
-      [KCODES.R]: CIDS.RBUMP, // R1
-      [KCODES.T]: CIDS.RTRIG, // R2
+      [KCODES.A]: CIDS.X, // Square
+      [KCODES.Q]: CIDS.LTRIG, // L2
+      [KCODES.w]: CIDS.LBUMP, // L1
+      [KCODES.E]: CIDS.RBUMP, // R1
+      [KCODES.R]: CIDS.RTRIG, // R2
     });
   }
 }
 
-
 export class Emulator extends AppWrapper {
-
   INP_LEFT = 1;
   INP_RIGHT = 1 << 1;
   INP_UP = 1 << 2;
@@ -79,7 +77,7 @@ export class Emulator extends AppWrapper {
     this.saveStatePath = null;
     this.prefs = new Prefs(this);
 
-    LOG.info("## Initial analog mode: " + this.analogMode);
+    LOG.info('## Initial analog mode: ' + this.analogMode);
   }
 
   RA_DIR = '/home/web_user/retroarch/';
@@ -95,9 +93,8 @@ export class Emulator extends AppWrapper {
     this.biosBuffers = biosBuffers;
     this.romBytes = romBytes;
     this.ext = ext;
-    this.disc = this.RA_DIR + "game." + (
-      ext != null && ext === "pbp" ? "pbp" : "chd"
-    );
+    this.disc =
+      this.RA_DIR + 'game.' + (ext != null && ext === 'pbp' ? 'pbp' : 'chd');
   }
 
   createControllers() {
@@ -135,9 +132,9 @@ export class Emulator extends AppWrapper {
 
       let files = [];
 
-      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`
+      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`;
       const slot0Save = FS.readFile(slot0);
-      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`
+      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`;
       const slot1Save = FS.readFile(slot1);
 
       if (slot0Save || slot1Save) {
@@ -177,10 +174,9 @@ export class Emulator extends AppWrapper {
 
     // Write the save state (if applicable)
     try {
-
-      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`
+      const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`;
       const slot0Res = FS.analyzePath(slot0, true);
-      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`
+      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`;
       const slot1Res = FS.analyzePath(slot1, true);
 
       if (!slot0Res.exists && !slot1Res.exists) {
@@ -276,15 +272,15 @@ export class Emulator extends AppWrapper {
         input |= this.INP_RTRIG;
       }
       if (controllers.isControlDown(i, CIDS.LANALOG)) {
-        input |= this.INP_LTHUMB
+        input |= this.INP_LTHUMB;
       }
       if (controllers.isControlDown(i, CIDS.RANALOG)) {
-        input |= this.INP_RTHUMB
+        input |= this.INP_RTHUMB;
       }
 
       const analog0x = controllers.getAxisValue(i, 0, true);
       const analog0y = controllers.getAxisValue(i, 0, false);
-      const analog1x= controllers.getAxisValue(i, 1, true);
+      const analog1x = controllers.getAxisValue(i, 1, true);
       const analog1y = controllers.getAxisValue(i, 1, false);
 
       let controller = i;
@@ -305,11 +301,7 @@ export class Emulator extends AppWrapper {
   }
 
   loadEmscriptenModule(canvas) {
-    const {
-      app,
-      frontendArray,
-      RA_DIR,
-    } = this;
+    const { app, frontendArray, RA_DIR } = this;
 
     return new Promise((resolve, reject) => {
       window.Module = {
@@ -406,17 +398,17 @@ export class Emulator extends AppWrapper {
     let options = 0;
     // multi-tap
     if (props.multitap) {
-      LOG.info("## multitap on");
+      LOG.info('## multitap on');
       options |= this.OPT1;
     } else {
-      LOG.info("## multitap off");
+      LOG.info('## multitap off');
     }
     // analog
     if (this.analogMode) {
-      LOG.info("## analog on");
+      LOG.info('## analog on');
       options |= this.OPT2;
     } else {
-      LOG.info("## analog off");
+      LOG.info('## analog off');
     }
     // Alternate BIOS files
     for (let bios in this.biosBuffers) {
@@ -431,7 +423,7 @@ export class Emulator extends AppWrapper {
     // Skip BIOS
     if (props.skipBios) {
       options |= this.OPT5;
-      LOG.info("## skip BIOS on");
+      LOG.info('## skip BIOS on');
     }
     Module._wrc_set_options(options);
   }
@@ -449,8 +441,8 @@ export class Emulator extends AppWrapper {
   }
 
   setAnalogMode(analog) {
-    const isAnalog = (analog === 1);
-    LOG.info("## Game setAnalogMode: " + isAnalog);
+    const isAnalog = analog === 1;
+    LOG.info('## Game setAnalogMode: ' + isAnalog);
     this.analogMode = isAnalog;
     this.applyGameSettings();
   }
@@ -551,23 +543,27 @@ export class Emulator extends AppWrapper {
       }, 50);
 
       this.displayLoop = new DisplayLoop(
-        60,    // frame rate (ignored due to no wait)
+        60, // frame rate (ignored due to no wait)
         true, // vsync
         debug, // debug
         true, // force native
-        false,  // no wait
+        false, // no wait
       );
       this.displayLoop.setAdjustTimestampEnabled(false);
 
       setTimeout(() => {
         this.resizeScreen(canvas);
         Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
-        setTimeout(() => { this.resizeScreen(canvas) }, 1);
+        setTimeout(() => {
+          this.resizeScreen(canvas);
+        }, 1);
       }, 50);
 
       window.onresize = () => {
         Module.setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
-        setTimeout(() => { this.resizeScreen(canvas) }, 1);
+        setTimeout(() => {
+          this.resizeScreen(canvas);
+        }, 1);
       };
 
       let exit = false;
@@ -586,8 +582,7 @@ export class Emulator extends AppWrapper {
             exit = true;
           }
         }
-      });;
-
+      });
     } catch (e) {
       LOG.error(e);
       app.exit(e);
