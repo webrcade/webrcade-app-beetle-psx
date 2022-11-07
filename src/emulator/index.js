@@ -502,7 +502,9 @@ export class Emulator extends AppWrapper {
       }
 
       // Write rom file
-      FS.writeFile(disc, this.romBytes);
+      let stream = FS.open(disc, 'a');
+      FS.write(stream, this.romBytes, 0, this.romBytes.length, 0, true);
+      FS.close(stream);
       this.romBytes = null;
 
       await this.wait(2000);
