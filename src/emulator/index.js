@@ -30,7 +30,7 @@ class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
       [KCODES.Z]: CIDS.A, // Cross
       [KCODES.A]: CIDS.X, // Square
       [KCODES.Q]: CIDS.LTRIG, // L2
-      [KCODES.w]: CIDS.LBUMP, // L1
+      [KCODES.W]: CIDS.LBUMP, // L1
       [KCODES.E]: CIDS.RBUMP, // R1
       [KCODES.R]: CIDS.RTRIG, // R2
     });
