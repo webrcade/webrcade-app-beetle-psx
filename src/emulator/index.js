@@ -582,6 +582,8 @@ export class Emulator extends AppWrapper {
             // Menu was displayed, should never happen (bad rom?)
             app.exit(Resources.getText(TEXT_IDS.ERROR_UNKNOWN));
             exit = true;
+          } else {
+            LOG.error(e);
           }
         }
       });
