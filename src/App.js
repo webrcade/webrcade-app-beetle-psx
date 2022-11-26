@@ -4,6 +4,7 @@ import {
   removeEmptyArrayItems,
   setMessageAnchorId,
   settings,
+  DiscSelectionEditor,
   FetchAppData,
   Resources,
   UrlUtil,
@@ -11,9 +12,9 @@ import {
   LOG,
   TEXT_IDS,
 } from '@webrcade/app-common';
+
 import { Emulator } from './emulator';
 import { EmulatorPauseScreen } from './pause';
-import { DiscSelectionEditor } from './selectdisc';
 
 import './App.scss';
 
