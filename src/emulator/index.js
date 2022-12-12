@@ -192,6 +192,12 @@ export class Emulator extends RetroAppWrapper {
       options |= this.OPT5;
       LOG.info('## skip BIOS on');
     }
+    // Disable memory card one
+    if (props.disableMemCard1) {
+      options |= this.OPT6;
+      LOG.info('## disable memory card 1');
+    }
+
     Module._wrc_set_options(options);
   }
 
