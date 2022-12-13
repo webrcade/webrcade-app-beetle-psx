@@ -83,9 +83,15 @@ export class Emulator extends RetroAppWrapper {
       let files = [];
 
       const slot0 = `/home/web_user/retroarch/userdata/saves/${this.SLOT0_NAME}`;
-      const slot0Save = FS.readFile(slot0);
-      const slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`;
-      const slot1Save = FS.readFile(slot1);
+      let slot0Save = null;
+      try {
+        slot0Save = FS.readFile(slot0);
+      } catch (e) {}
+      let slot1 = `/home/web_user/retroarch/userdata/saves/${this.SLOT1_NAME}`;
+      let slot1Save = null;
+      try {
+        slot1Save = FS.readFile(slot1);
+      } catch (e) {}
 
       if (slot0Save || slot1Save) {
         if (slot0Save) {
