@@ -36,6 +36,8 @@ export class Emulator extends RetroAppWrapper {
 
     this.analogMode = this.getProps().analog;
     this.swapControllers = false;
+    this.ejectInsert = false;
+    this.insert = false;
     LOG.info('## Initial analog mode: ' + this.analogMode);
   }
 
@@ -204,6 +206,20 @@ export class Emulator extends RetroAppWrapper {
       LOG.info('## disable memory card 1');
     }
 
+    // Eject
+    if (this.ejectInsert) {
+      this.ejectInsert = false;
+      options |= this.OPT7;
+      LOG.info('## eject');
+    }
+
+    // Eject
+    if (this.insert) {
+      this.insert = false;
+      options |= this.OPT8;
+      LOG.info('## insert');
+    }
+
     Module._wrc_set_options(options);
   }
 
@@ -224,6 +240,26 @@ export class Emulator extends RetroAppWrapper {
     LOG.info('## Game setAnalogMode: ' + isAnalog);
     this.analogMode = isAnalog;
     this.applyGameSettings();
+  }
+
+  setEjectInsert(val) {
+    this.ejectInsert = val;
+    LOG.info("## setEjectInsert: " + val);
+    if (val) {
+      this.applyGameSettings();
+
+      setTimeout(() => {
+        this.setInsert(true);
+      }, 1000);
+    }
+  }
+
+  setInsert(val) {
+    this.insert = val;
+    LOG.info("## setInsert: " + val);
+    if (val) {
+      this.applyGameSettings();
+    }
   }
 
   resizeScreen(canvas) {

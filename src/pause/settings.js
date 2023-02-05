@@ -32,6 +32,8 @@ export class PsxSettingsEditor extends Component {
         origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
         bilinearMode: emulator.getPrefs().isBilinearEnabled(),
         swapControllers: emulator.getSwapControllers(),
+        ejectInsert: false,
+        insert: false
       },
     });
   }
@@ -54,6 +56,8 @@ export class PsxSettingsEditor extends Component {
         onOk={() => {
           emulator.setAnalogMode(values.analogMode ? 1 : 0);
           emulator.setSwapControllers(values.swapControllers);
+          emulator.setEjectInsert(values.ejectInsert);
+          emulator.setInsert(values.insert);
           if (values.origBilinearMode !== values.bilinearMode) {
             emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
             emulator.updateBilinearFilter();
@@ -102,7 +106,9 @@ class PsxSettingsTab extends FieldsTab {
     super();
     this.analogModeRef = React.createRef();
     this.swapControllersRef = React.createRef();
-    this.gridComps = [[this.analogModeRef], [this.swapControllersRef]];
+    this.ejectInsertRef = React.createRef();
+    // this.insertRef = React.createRef();
+    this.gridComps = [[this.analogModeRef], [this.swapControllersRef], [this.ejectInsertRef]/*, [this.insertRef]*/];
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -116,7 +122,7 @@ class PsxSettingsTab extends FieldsTab {
   }
 
   render() {
-    const { analogModeRef, swapControllersRef } = this;
+    const { analogModeRef, ejectInsertRef, /*insertRef,*/ swapControllersRef } = this;
     const { focusGrid } = this.context;
     const { setValues, values } = this.props;
 
@@ -151,6 +157,38 @@ class PsxSettingsTab extends FieldsTab {
             />
           </FieldControl>
         </FieldRow>
+        <FieldRow>
+          <FieldLabel>Reset disc</FieldLabel>
+          <FieldControl>
+            <Switch
+              ref={ejectInsertRef}
+              onPad={(e) => focusGrid.moveFocus(e.type, ejectInsertRef)}
+              onChange={(e) => {
+                setValues({
+                  ...values,
+                  ...{ ejectInsert: e.target.checked },
+                });
+              }}
+              checked={values.ejectInsert}
+            />
+          </FieldControl>
+        </FieldRow>
+        {/* <FieldRow>
+          <FieldLabel>Insert disc</FieldLabel>
+          <FieldControl>
+            <Switch
+              ref={insertRef}
+              onPad={(e) => focusGrid.moveFocus(e.type, insertRef)}
+              onChange={(e) => {
+                setValues({
+                  ...values,
+                  ...{ insert: e.target.checked },
+                });
+              }}
+              checked={values.insert}
+            />
+          </FieldControl>
+        </FieldRow> */}
       </>
     );
   }
