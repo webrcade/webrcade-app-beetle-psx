@@ -262,19 +262,29 @@ export class Emulator extends RetroAppWrapper {
     }
   }
 
-  resizeScreen(canvas) {
-    // Determine the zoom level
-    let zoomLevel = 0;
-    if (this.getProps().zoomLevel) {
-      zoomLevel = this.getProps().zoomLevel;
-    }
-
-    const size = 96 + zoomLevel;
-    canvas.style.setProperty('width', `${size}vw`, 'important');
-    canvas.style.setProperty('height', `${size}vh`, 'important');
-    canvas.style.setProperty('max-width', `calc(${size}vh*1.22)`, 'important');
-    canvas.style.setProperty('max-height', `calc(${size}vw*0.82)`, 'important');
+  isForceAspectRatio() {
+    return false;
   }
 
-  getShotAspectRatio() { return 1.22; }
+  getDefaultAspectRatio() {
+    return 1.333;
+  }
+
+  resizeScreen(canvas) {
+    this.canvas = canvas;
+    // // Determine the zoom level
+    // let zoomLevel = 0;
+    // if (this.getProps().zoomLevel) {
+    //   zoomLevel = this.getProps().zoomLevel;
+    // }
+
+    // const size = 96 + zoomLevel;
+    // canvas.style.setProperty('width', `${size}vw`, 'important');
+    // canvas.style.setProperty('height', `${size}vh`, 'important');
+    // canvas.style.setProperty('max-width', `calc(${size}vh*1.22)`, 'important');
+    // canvas.style.setProperty('max-height', `calc(${size}vw*0.82)`, 'important');
+    this.updateScreenSize();
+  }
+
+  getShotAspectRatio() { return this.getDefaultAspectRatio(); }
 }

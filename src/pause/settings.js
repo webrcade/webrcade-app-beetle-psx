@@ -2,6 +2,7 @@ import React from 'react';
 import { Component } from 'react';
 
 import {
+  AppDisplaySettingsTab,
   EditorScreen,
   FieldsTab,
   FieldRow,
@@ -86,7 +87,7 @@ export class PsxSettingsEditor extends Component {
             image: TelevisionWhiteImage,
             label: 'Display Settings',
             content: (
-              <PsxDisplaySettingsTab
+              <AppDisplaySettingsTab
                 emulator={emulator}
                 isActive={tabIndex === 1}
                 setFocusGridComps={setFocusGridComps}
@@ -195,45 +196,4 @@ class PsxSettingsTab extends FieldsTab {
 }
 PsxSettingsTab.contextType = WebrcadeContext;
 
-class PsxDisplaySettingsTab extends FieldsTab {
-  constructor() {
-    super();
-    this.bilinearRef = React.createRef();
-    this.gridComps = [[this.bilinearRef]];
-  }
 
-  componentDidUpdate(prevProps, prevState) {
-    const { gridComps } = this;
-    const { setFocusGridComps } = this.props;
-    const { isActive } = this.props;
-
-    if (isActive && isActive !== prevProps.isActive) {
-      setFocusGridComps(gridComps);
-    }
-  }
-
-  render() {
-    const { bilinearRef } = this;
-    const { focusGrid } = this.context;
-    const { setValues, values } = this.props;
-
-    return (
-      <>
-        <FieldRow>
-          <FieldLabel>Force bilinear filter</FieldLabel>
-          <FieldControl>
-            <Switch
-              ref={bilinearRef}
-              onPad={(e) => focusGrid.moveFocus(e.type, bilinearRef)}
-              onChange={(e) => {
-                setValues({ ...values, ...{ bilinearMode: e.target.checked } });
-              }}
-              checked={values.bilinearMode}
-            />
-          </FieldControl>
-        </FieldRow>
-      </>
-    );
-  }
-}
-PsxDisplaySettingsTab.contextType = WebrcadeContext;
