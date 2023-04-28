@@ -33,6 +33,8 @@ export class PsxSettingsEditor extends Component {
         origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
         bilinearMode: emulator.getPrefs().isBilinearEnabled(),
         swapControllers: emulator.getSwapControllers(),
+        origScreenSize: emulator.getPrefs().getScreenSize(),
+        screenSize: emulator.getPrefs().getScreenSize(),
         ejectInsert: false,
         insert: false
       },
@@ -59,9 +61,18 @@ export class PsxSettingsEditor extends Component {
           emulator.setSwapControllers(values.swapControllers);
           emulator.setEjectInsert(values.ejectInsert);
           emulator.setInsert(values.insert);
+          let updated = false;
           if (values.origBilinearMode !== values.bilinearMode) {
             emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
             emulator.updateBilinearFilter();
+            updated = true;
+          }
+          if (values.origScreenSize !== values.screenSize) {
+            emulator.getPrefs().setScreenSize(values.screenSize);
+            emulator.updateScreenSize();
+            updated = true;
+          }
+          if (updated) {
             emulator.getPrefs().save();
           }
           onClose();
