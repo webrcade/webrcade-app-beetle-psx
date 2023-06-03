@@ -7,6 +7,7 @@ import {
   KCODES,
   LOG,
 } from '@webrcade/app-common';
+import { Prefs } from './prefs';
 
 class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
   constructor() {
@@ -38,6 +39,11 @@ export class Emulator extends RetroAppWrapper {
     this.swapControllers = false;
     this.ejectInsert = false;
     this.insert = false;
+    this.prefs = new Prefs(this);
+
+    // Allow game saves to persist after loading state
+    this.saveManager.setDisableGameSaveOnStateLoad(false);
+
     LOG.info('## Initial analog mode: ' + this.analogMode);
   }
 
@@ -218,6 +224,10 @@ export class Emulator extends RetroAppWrapper {
       this.insert = false;
       options |= this.OPT8;
       LOG.info('## insert');
+    }
+
+    if (this.prefs.getGpuResolution() === 1) {
+      options |= this.OPT15; // 2x
     }
 
     Module._wrc_set_options(options);
