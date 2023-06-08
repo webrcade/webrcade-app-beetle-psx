@@ -9,7 +9,9 @@ import {
   FieldLabel,
   FieldControl,
   TelevisionWhiteImage,
+  TuneWhiteImage,
   GamepadWhiteImage,
+  Select,
   Switch,
   WebrcadeContext,
 } from '@webrcade/app-common';
@@ -35,6 +37,8 @@ export class PsxSettingsEditor extends Component {
         swapControllers: emulator.getSwapControllers(),
         origScreenSize: emulator.getPrefs().getScreenSize(),
         screenSize: emulator.getPrefs().getScreenSize(),
+        origGpuResolution: emulator.getPrefs().getGpuResolution(),
+        gpuResolution: emulator.getPrefs().getGpuResolution(),
         ejectInsert: false,
         insert: false
       },
@@ -72,6 +76,11 @@ export class PsxSettingsEditor extends Component {
             emulator.updateScreenSize();
             updated = true;
           }
+          if (values.origGpuResolution !== values.gpuResolution) {
+            emulator.getPrefs().setGpuResolution(values.gpuResolution);
+            emulator.applyGameSettings();
+            updated = true;
+          }
           if (updated) {
             emulator.getPrefs().save();
           }
@@ -83,7 +92,7 @@ export class PsxSettingsEditor extends Component {
         tabs={[
           {
             image: GamepadWhiteImage,
-            label: 'Controller Settings (Session only)',
+            label: 'PlayStation Settings (Session only)',
             content: (
               <PsxSettingsTab
                 emulator={emulator}
@@ -101,6 +110,19 @@ export class PsxSettingsEditor extends Component {
               <AppDisplaySettingsTab
                 emulator={emulator}
                 isActive={tabIndex === 1}
+                setFocusGridComps={setFocusGridComps}
+                values={values}
+                setValues={setValues}
+              />
+            ),
+          },
+          {
+            image: TuneWhiteImage,
+            label: 'Advanced Settings',
+            content: (
+              <PsxAdvancedSettingsTab
+                emulator={emulator}
+                isActive={tabIndex === 2}
                 setFocusGridComps={setFocusGridComps}
                 values={values}
                 setValues={setValues}
@@ -208,3 +230,57 @@ class PsxSettingsTab extends FieldsTab {
 PsxSettingsTab.contextType = WebrcadeContext;
 
 
+
+class PsxAdvancedSettingsTab extends FieldsTab {
+  constructor() {
+    super();
+    this.gpuResolutionRef = React.createRef();
+    this.gridComps = [[this.gpuResolutionRef]];
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { gridComps } = this;
+    const { setFocusGridComps } = this.props;
+    const { isActive } = this.props;
+
+    if (isActive && isActive !== prevProps.isActive) {
+      setFocusGridComps(gridComps);
+    }
+  }
+
+  render() {
+    const { gpuResolutionRef } = this;
+    const { focusGrid } = this.context;
+    const { setValues, values } = this.props;
+
+    const opts = [];
+    opts.push({ value: 0, label: "Native"});
+    opts.push({ value: 1, label: "2x"});
+
+
+    console.log(values.gpuResolution)
+
+    return (
+      <>
+        <FieldRow>
+          <FieldLabel>GPU resolution</FieldLabel>
+          <FieldControl>
+            <Select
+              ref={gpuResolutionRef}
+              options={opts}
+              onChange={(value) => {
+                setValues({
+                  ...values,
+                  ...{ gpuResolution: value},
+                });
+              }}
+              value={values.gpuResolution}
+              onPad={(e) => focusGrid.moveFocus(e.type, gpuResolutionRef)}
+            />
+          </FieldControl>
+        </FieldRow>
+      </>
+    );
+  }
+}
+PsxAdvancedSettingsTab.contextType = WebrcadeContext;
