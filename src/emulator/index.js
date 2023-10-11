@@ -2,7 +2,9 @@ import {
   RetroAppWrapper,
   Controller,
   Controllers,
+  FetchAppData,
   KeyCodeToControlMapping,
+  Unzip,
   CIDS,
   KCODES,
   LOG,
@@ -172,9 +174,34 @@ export class Emulator extends RetroAppWrapper {
     }
   }
 
-  applyGameSettings() {
-    const { Module } = window;
+  async onWriteAdditionalFiles() {
+    const { FS } = window;
     const props = this.getProps();
+
+    // Write .SBI file (if applicable)
+    const sbiFiles = props.sbi;
+    if (this.discIndex != null && sbiFiles && this.discIndex < sbiFiles.length) {
+      try {
+        const uz = new Unzip().setDebug(true);
+        const res = await new FetchAppData(sbiFiles[this.discIndex]).fetch();
+        let blob = await res.blob();
+        // Unzip it
+        blob = await uz.unzip(blob, ['.sbi']);
+        // Convert to array buffer
+        const arrayBuffer = await new Response(blob).arrayBuffer();
+        // Write to file system
+        const u8array = new Uint8Array(arrayBuffer);
+        FS.writeFile(this.RA_DIR + "game.sbi", u8array);
+        LOG.info("## Successfully wrote .sbi file.");
+      } catch (e) {
+        LOG.error(e);
+      }
+    }
+  }
+
+  applyGameSettings() {
+    const props = this.getProps();
+    const { Module } = window;
 
     let options = 0;
     // multi-tap
