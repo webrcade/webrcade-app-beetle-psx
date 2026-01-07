@@ -33,8 +33,8 @@ export class PsxSettingsEditor extends Component {
 
     const values = {
       analogMode: emulator.getAnalogMode(),
-      origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
-      bilinearMode: emulator.getPrefs().isBilinearEnabled(),
+      origBilinearMode: emulator.getPrefs().getBilinearMode(),
+      bilinearMode: emulator.getPrefs().getBilinearMode(),
       swapControllers: emulator.getSwapControllers(),
       origScreenSize: emulator.getPrefs().getScreenSize(),
       screenSize: emulator.getPrefs().getScreenSize(),
@@ -74,8 +74,7 @@ export class PsxSettingsEditor extends Component {
           emulator.setInsert(values.insert);
           let updated = false;
           if (values.origBilinearMode !== values.bilinearMode) {
-            emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
-            emulator.updateBilinearFilter();
+            emulator.getPrefs().setBilinearMode(values.bilinearMode);
             updated = true;
           }
           if (values.origScreenSize !== values.screenSize) {
@@ -94,6 +93,7 @@ export class PsxSettingsEditor extends Component {
 
           // Set the shader
           await this.shaderService.setShader(values.shaderId);
+          emulator.updateBilinearFilter();
 
           onClose();
         }}
@@ -120,6 +120,7 @@ export class PsxSettingsEditor extends Component {
             content: (
               <AppDisplaySettingsTab
                 emulator={emulator}
+                isBilinearMode={true}
                 isActive={tabIndex === 1}
                 setFocusGridComps={setFocusGridComps}
                 values={values}

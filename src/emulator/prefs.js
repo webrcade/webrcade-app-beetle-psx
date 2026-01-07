@@ -1,8 +1,8 @@
 import {
-    AppPrefs
+    NewRetroPrefs
   } from '@webrcade/app-common';
 
-  export class Prefs extends AppPrefs {
+  export class Prefs extends NewRetroPrefs {
     constructor(emu) {
       super(emu);
 
