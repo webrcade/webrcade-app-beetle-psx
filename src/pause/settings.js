@@ -14,6 +14,8 @@ import {
   Select,
   Switch,
   WebrcadeContext,
+  BlurImage,
+  ShaderSettingsTab,
 } from '@webrcade/app-common';
 
 export class PsxSettingsEditor extends Component {
@@ -29,19 +31,24 @@ export class PsxSettingsEditor extends Component {
   componentDidMount() {
     const { emulator } = this.props;
 
+    const values = {
+      analogMode: emulator.getAnalogMode(),
+      origBilinearMode: emulator.getPrefs().getBilinearMode(),
+      bilinearMode: emulator.getPrefs().getBilinearMode(),
+      swapControllers: emulator.getSwapControllers(),
+      origScreenSize: emulator.getPrefs().getScreenSize(),
+      screenSize: emulator.getPrefs().getScreenSize(),
+      origGpuResolution: emulator.getPrefs().getGpuResolution(),
+      gpuResolution: emulator.getPrefs().getGpuResolution(),
+      ejectInsert: false,
+      insert: false
+    }
+
+    this.shaderService = this.props.emulator.getShadersService();
+    this.shaderService.addEditorValues(values);
+
     this.setState({
-      values: {
-        analogMode: emulator.getAnalogMode(),
-        origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
-        bilinearMode: emulator.getPrefs().isBilinearEnabled(),
-        swapControllers: emulator.getSwapControllers(),
-        origScreenSize: emulator.getPrefs().getScreenSize(),
-        screenSize: emulator.getPrefs().getScreenSize(),
-        origGpuResolution: emulator.getPrefs().getGpuResolution(),
-        gpuResolution: emulator.getPrefs().getGpuResolution(),
-        ejectInsert: false,
-        insert: false
-      },
+      values: values,
     });
   }
 
@@ -60,15 +67,14 @@ export class PsxSettingsEditor extends Component {
     return (
       <EditorScreen
         showCancel={true}
-        onOk={() => {
+        onOk={async () => {
           emulator.setAnalogMode(values.analogMode ? 1 : 0);
           emulator.setSwapControllers(values.swapControllers);
           emulator.setEjectInsert(values.ejectInsert);
           emulator.setInsert(values.insert);
           let updated = false;
           if (values.origBilinearMode !== values.bilinearMode) {
-            emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
-            emulator.updateBilinearFilter();
+            emulator.getPrefs().setBilinearMode(values.bilinearMode);
             updated = true;
           }
           if (values.origScreenSize !== values.screenSize) {
@@ -84,6 +90,11 @@ export class PsxSettingsEditor extends Component {
           if (updated) {
             emulator.getPrefs().save();
           }
+
+          // Set the shader
+          await this.shaderService.setShader(values.shaderId);
+          emulator.updateBilinearFilter();
+
           onClose();
         }}
         onClose={onClose}
@@ -109,6 +120,7 @@ export class PsxSettingsEditor extends Component {
             content: (
               <AppDisplaySettingsTab
                 emulator={emulator}
+                isBilinearMode={true}
                 isActive={tabIndex === 1}
                 setFocusGridComps={setFocusGridComps}
                 values={values}
@@ -117,12 +129,26 @@ export class PsxSettingsEditor extends Component {
             ),
           },
           {
+            image: BlurImage,
+            label: 'Shader Settings',
+            content: (
+              <ShaderSettingsTab
+                shaderService={this.shaderService}
+                emulator={emulator}
+                isActive={tabIndex === 2}
+                setFocusGridComps={setFocusGridComps}
+                values={values}
+                setValues={setValues}
+              />
+            )
+          },
+          {
             image: TuneWhiteImage,
             label: 'Advanced Settings',
             content: (
               <PsxAdvancedSettingsTab
                 emulator={emulator}
-                isActive={tabIndex === 2}
+                isActive={tabIndex === 3}
                 setFocusGridComps={setFocusGridComps}
                 values={values}
                 setValues={setValues}
