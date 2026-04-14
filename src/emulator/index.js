@@ -175,6 +175,7 @@ export class Emulator extends RetroAppWrapper {
   }
 
   async onWriteAdditionalFiles() {
+    await super.onWriteAdditionalFiles();
     const { FS } = window;
     const props = this.getProps();
 
