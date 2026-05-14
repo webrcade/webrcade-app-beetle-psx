@@ -60,6 +60,10 @@ export class Emulator extends RetroAppWrapper {
     return 'js/mednafen_psx_libretro.js';
   }
 
+  getHashFileExtension() {
+    return 'chd';
+  }
+
   createControllers() {
     return new Controllers([
       new Controller(new PsxKeyCodeToControlMapping()),
