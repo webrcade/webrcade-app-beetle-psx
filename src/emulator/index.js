@@ -1,5 +1,5 @@
 import {
-  RetroAppWrapper,
+  BasicRetroAppWrapper,
   Controller,
   Controllers,
   FetchAppData,
@@ -15,7 +15,12 @@ class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
   constructor() {
     super({
       [KCODES.ENTER]: CIDS.START,
-      [KCODES.SHIFT]: CIDS.SELECT,
+      // WRC - was [KCODES.SHIFT], which doesn't exist in KCODES (only
+      // SHIFT_LEFT/SHIFT_RIGHT) - evaluated to the object key "undefined",
+      // completely unreachable by any real keypress. pause/controls.js's
+      // own KeyboardControlsTab already documented ShiftRight -> Select,
+      // confirming the intent - fixed to match.
+      [KCODES.SHIFT_RIGHT]: CIDS.SELECT,
       [KCODES.ESCAPE]: CIDS.ESCAPE,
       [KCODES.ARROW_UP]: CIDS.UP,
       [KCODES.ARROW_DOWN]: CIDS.DOWN,
@@ -33,7 +38,7 @@ class PsxKeyCodeToControlMapping extends KeyCodeToControlMapping {
   }
 }
 
-export class Emulator extends RetroAppWrapper {
+export class Emulator extends BasicRetroAppWrapper {
   constructor(app, debug = false) {
     super(app, debug);
 
@@ -55,6 +60,41 @@ export class Emulator extends RetroAppWrapper {
   SLOT0_NAME = 'game.srm';
   SLOT1_NAME = 'game.1.mcr';
   SAVE_NAME = 'sav';
+
+  // WRC - PSX's DualShock has a real analog R2 (KCODES.R above) that many
+  // games hold for extended periods (gas pedal, aim, etc.), and real
+  // clickable L3/R3 sticks some games bind to their own function
+  // (camera reset, sprint toggle, etc.) - both forwarded generically by
+  // the shared pollControls() below. Holding R2 for a real, extended
+  // reason while separately tapping L3 for another real reason would,
+  // without this, register as a spurious RT+LA "Select" every time (the
+  // shared engine-wide Select-combo synthesis, see
+  // webrcade-app-common/src/input/controls.js). Opting back into the
+  // hold-timer suppression here - unlike most apps, which should leave
+  // these off (see retrowrapper/index.js's default) - trades a ~1s delay
+  // before Select/Start register on a genuinely long R2 hold for
+  // avoiding that spurious collision, which is the right tradeoff for
+  // this specific console's real control scheme.
+  isStartEscapeHackEnabled() {
+    return true;
+  }
+
+  isSelectEscapeHackEnabled() {
+    return true;
+  }
+
+  onFrame() {
+    // Touch/mouse/keyboard interaction detection + on-screen touch overlay
+    // gating is inherited from BasicRetroAppWrapper. This app has no other
+    // per-frame work of its own.
+    super.onFrame();
+  }
+
+  // Base class default pauses on any tap anywhere on screen -- redundant
+  // (and disruptive) now that there's a dedicated Pause button in the
+  // touch overlay. Same override every other TouchOverlay app uses for
+  // the same reason.
+  createTouchListener() {}
 
   getScriptUrl() {
     return 'js/mednafen_psx_libretro.js';

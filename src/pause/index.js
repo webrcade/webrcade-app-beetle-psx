@@ -214,7 +214,7 @@ export class EmulatorPauseScreen extends Component {
           />
         ) : null}
         {mode === ModeEnum.PSX_SETTINGS ? (
-          <PsxSettingsEditor emulator={emulator} onClose={closeCallback} />
+          <PsxSettingsEditor emulator={emulator} onClose={closeCallback} showOnScreenControls={true} />
         ) : null}
         {mode === ModeEnum.CHEATS ? (
           <CheatsSettingsEditor
